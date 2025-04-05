@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "beautifulsoup4>=4.13.3",
     "camel-ai[all]<0.2.37",
     "chunkr-ai>=0.0.41",
     "docx2markdown>=0.1.1",
