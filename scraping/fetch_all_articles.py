@@ -304,4 +304,4 @@ def fetch_articles_by_country(days: int = 1, slice_hours: int = 12) -> str:
 
 if __name__ == "__main__":
     # Fetch last day of articles by country
-    fetch_articles_by_country(days=1, slice_hours=12) #decrease slice_hours to get more articles, now max 250 articles per slice
+    fetch_articles_by_country(days=1, slice_hours=1) #decrease slice_hours to get more articles, now max 250 articles per slice

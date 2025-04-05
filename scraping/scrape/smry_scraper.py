@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 from urllib.parse import urljoin, quote
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(
@@ -13,13 +14,13 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# Input file path
-input_file = 'data/countries/all_countries_1d_20250405_150707.csv'
+# Setup paths
+INPUT_FILE = 'data/countries/all_countries_1d_20250405_150707.csv'
+OUTPUT_DIR = 'data/smry_scrape'
+BATCH_SIZE = 5  # Process 5 rows at a time
 
-# Read the CSV file
-logging.info(f"Reading input file: {input_file}")
-df = pd.read_csv(input_file)
-logging.info(f"Loaded {len(df)} rows from the input file")
+# Create output directory if it doesn't exist
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def clean_url(url):
     """Clean URL string by removing brackets, quotes, and spaces"""
@@ -31,7 +32,6 @@ def get_smry_url(url):
     """Generate SMRY.AI URL"""
     return f"https://smry.ai/{clean_url(url)}"
 
-# Function to scrape article text directly from source
 def scrape_article_text(url):
     try:
         clean_source_url = clean_url(url)
@@ -63,15 +63,13 @@ def scrape_article_text(url):
             
             for container in article_containers:
                 if container:
-                    # Get all paragraphs from the container
                     paragraphs = container.find_all('p')
                     if paragraphs:
-                        # Join paragraphs and clean the text
                         text = ' '.join([p.get_text().strip() for p in paragraphs])
-                        text = ' '.join(text.split())  # Normalize whitespace
-                        if len(text) > 100:  # Only return if we found substantial text
+                        text = ' '.join(text.split())
+                        if len(text) > 100:
                             logging.info(f"Found article text: {text[:100]}...")
-                            return text  # Remove the 1000 character limit
+                            return text
             
             # Fallback: try to get all paragraphs from the page
             paragraphs = soup.find_all('p')
@@ -80,7 +78,7 @@ def scrape_article_text(url):
                 text = ' '.join(text.split())
                 if len(text) > 100:
                     logging.info(f"Found text using fallback: {text[:100]}...")
-                    return text  # Remove the 1000 character limit
+                    return text
             
             logging.warning(f"No substantial text content found for {clean_source_url}")
             return ""
@@ -89,69 +87,90 @@ def scrape_article_text(url):
         logging.error(f"Error scraping {url}: {str(e)}")
     return ""
 
-# Create a list to store new rows
-new_rows = []
-
-# Randomly sample 5 rows from the DataFrame
-logging.info("Selecting 5 random rows from the dataset")
-sampled_df = df #.sample(n=5, random_state=42)  # random_state for reproducibility
-logging.info(f"Selected {len(sampled_df)} random rows")
-
-# Process each row from the random sample
-for index, row in sampled_df.iterrows():
-    logging.info(f"Processing row {index + 1}/5")
-    # Split URLs if multiple exist and clean them
-    urls = [clean_url(url.strip()) for url in str(row['urls']).split(',')]
-    logging.info(f"Found {len(urls)} URLs in this row")
+def process_batch(batch_df, batch_num, total_batches):
+    new_rows = []
+    logging.info(f"Processing batch {batch_num}/{total_batches}")
     
-    for url_index, url in enumerate(urls, 1):
-        if url:  # Only process non-empty URLs
-            logging.info(f"Processing URL {url_index}/{len(urls)}: {url}")
-            smry_url = get_smry_url(url)
-            # Create a new row with the required columns
-            new_row = {
-                'URLs': url,  # Original URL
-                'SMRY_URLs': smry_url,  # Add SMRY.AI URL
-                'DateTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'Title': row['titles'] if pd.notna(row['titles']) else '',
-                'LangCode': 'en',
-                'DocTone': row['normalized_score'] if pd.notna(row['normalized_score']) else 0.0,
-                'Location': row['location_name'] if pd.notna(row['location_name']) else '',
-                'CountryCode': row['country_code'] if pd.notna(row['country_code']) else '',
-                'ContextualText': scrape_article_text(url)
-            }
-            new_rows.append(new_row)
-            logging.info(f"Successfully processed URL: {url}")
-            # Add a small delay to avoid overwhelming servers
-            logging.info("Waiting 1 second before next request...")
-            time.sleep(1)
+    for index, row in batch_df.iterrows():
+        logging.info(f"Processing row {index}")
+        urls = [clean_url(url.strip()) for url in str(row['urls']).split(',')]
+        logging.info(f"Found {len(urls)} URLs in this row")
+        
+        for url_index, url in enumerate(urls, 1):
+            if url:
+                logging.info(f"Processing URL {url_index}/{len(urls)}: {url}")
+                smry_url = get_smry_url(url)
+                new_row = {
+                    'URLs': url,
+                    'SMRY_URLs': smry_url,
+                    'DateTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'Title': row['titles'] if pd.notna(row['titles']) else '',
+                    'LangCode': 'en',
+                    'DocTone': row['normalized_score'] if pd.notna(row['normalized_score']) else 0.0,
+                    'Location': row['location_name'] if pd.notna(row['location_name']) else '',
+                    'CountryCode': row['country_code'] if pd.notna(row['country_code']) else '',
+                    'ContextualText': scrape_article_text(url)
+                }
+                new_rows.append(new_row)
+                logging.info(f"Successfully processed URL: {url}")
+                time.sleep(1)
+    
+    return pd.DataFrame(new_rows)
 
-# Create new DataFrame with processed data
-logging.info("Creating final DataFrame")
-new_df = pd.DataFrame(new_rows)
+def main():
+    # Read the CSV file
+    logging.info(f"Reading input file: {INPUT_FILE}")
+    df = pd.read_csv(INPUT_FILE)
+    logging.info(f"Loaded {len(df)} rows from the input file")
+    
+    # Calculate number of batches
+    total_rows = len(df)
+    total_batches = (total_rows + BATCH_SIZE - 1) // BATCH_SIZE
+    logging.info(f"Processing {total_rows} rows in {total_batches} batches of {BATCH_SIZE}")
+    
+    # Required columns for output
+    required_columns = [
+        'URLs',
+        'SMRY_URLs',
+        'DateTime',
+        'Title',
+        'LangCode',
+        'DocTone',
+        'Location',
+        'CountryCode',
+        'ContextualText'
+    ]
+    
+    # Get timestamp for file naming
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_file = os.path.join(OUTPUT_DIR, f'scraped_articles_{timestamp}.csv')
+    
+    # Process in batches
+    for batch_num in range(total_batches):
+        start_idx = batch_num * BATCH_SIZE
+        end_idx = min((batch_num + 1) * BATCH_SIZE, total_rows)
+        
+        logging.info(f"\nStarting batch {batch_num + 1}/{total_batches}")
+        logging.info(f"Processing rows {start_idx} to {end_idx}")
+        
+        batch_df = df.iloc[start_idx:end_idx]
+        processed_batch = process_batch(batch_df, batch_num + 1, total_batches)
+        
+        # Ensure columns are in the right order
+        processed_batch = processed_batch[required_columns]
+        
+        # Append to the CSV file (create if first batch, append if subsequent)
+        mode = 'w' if batch_num == 0 else 'a'
+        header = batch_num == 0
+        processed_batch.to_csv(output_file, mode=mode, header=header, index=False, encoding='utf-8')
+        logging.info(f"Updated results in: {output_file}")
+        
+        logging.info(f"Completed batch {batch_num + 1}/{total_batches}")
+    
+    logging.info(f"\nProcessing complete! Results saved to: {output_file}")
 
-# These are the required columns in the exact order we want
-required_columns = [
-    'URLs',
-    'SMRY_URLs',  # Add SMRY.AI URL column
-    'DateTime',
-    'Title',
-    'LangCode',
-    'DocTone',
-    'Location',
-    'CountryCode',
-    'ContextualText'
-]
-
-# Ensure the DataFrame has all required columns in the correct order
-final_df = new_df[required_columns]
-logging.info(f"Final DataFrame created with {len(final_df)} rows")
-
-# Save the processed data
-output_file = input_file.replace('.csv', '_processed_sample.csv')
-logging.info(f"Saving results to: {output_file}")
-final_df.to_csv(output_file, index=False, encoding='utf-8')
-logging.info("Processing complete!")
+if __name__ == "__main__":
+    main()
 
 
 
