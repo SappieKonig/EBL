@@ -54,18 +54,23 @@ Please rate how positive the article is with respect to the following subject:
 {query}
 
 Please rate the article on a scale of 1 to 10, where 1 is very negative and 10 is very positive.
+Reason first, give your answer after.
 
-Format your response as follows:
+Format your final score in the following way:
+<rating>1-10</rating>
 
-'any thinking you did'
-<rating>'score'</rating>
 """
     return prompt
 
 
 def get_rating(answer):
-    rating = answer.split('<rating>')[1].split('</rating>')[0]
-    return float(rating)
+    try:
+        rating = answer.split('<rating>')[1].split('</rating>')[0]
+        rating = float(rating)
+    except Exception as e:
+        print(e, answer)
+        return None
+    return rating
 
 if __name__ == "__main__":
     with open('recent_news.json', 'r') as f:
