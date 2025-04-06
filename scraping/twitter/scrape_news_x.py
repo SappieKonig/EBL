@@ -221,9 +221,9 @@ class SimpleTwitterScraper:
                         "URLs": url,
                         "DateTime": timestamp,
                         "Title": title[:100],  # Limit title length
-                        "LangCode": "",  # Not detected
+                        "LangCode": "en",  # Not detected
                         "DocTone": "",   # Not detected
-                        "Location": "",  # Not detected
+                        "Location": "twitter",  # Not detected
                         "CountryCode": "twitter",
                         "ContextualText": tweet_text
                     }
@@ -380,6 +380,7 @@ def main():
         "https://x.com/i/trending/1908562448812294240",
         "https://x.com/i/trending/1908562447922798690",
         "https://x.com/i/trending/1908590797307670873",
+        "https://x.com/i/trending/1908821843483722138",
         "https://x.com/search?q=Cramer&src=trend_click&vertical=trends",
         "https://x.com/search?q=trump&src=typed_query"
     ]
@@ -394,8 +395,6 @@ def main():
         "tariffs",
         "reciprocal tariffs",
         "trade war",
-        "tariffs are bad",
-        "tariffs are good",
         "economy",
         "FED",
         "inflation",
@@ -426,6 +425,27 @@ def main():
         "Taiwan Strait peace treaty",
         "Taiwan Strait peace agreement",
 
+        "Macron",
+        "Starmer",
+        "Putin",
+        "Zelensky",
+        "von der Leyen",
+        "Xi Jinping",
+        "Modi",
+        "India",
+        "China",
+        "Beijing",
+        "Washington",
+        "Dick Schoof",
+        "Schoof",
+        "Erdogan",
+        "Lula",
+        "Abortion",
+        "Climate Change",
+        "freedom of speech",
+        "freedom of expression",
+        "freedom of the press",
+        "fair trade"
         
 
     ]
@@ -567,5 +587,5 @@ if __name__ == "__main__":
     else:
         # Run with default parameters (use predefined links)
         print("Running with default parameters (predefined links)...")
-        sys.argv = [sys.argv[0], "--use-predefined", "--strip-content", "--max=120"]
+        sys.argv = [sys.argv[0], "--use-predefined", "--strip-content", "--max=250"]
         main()
