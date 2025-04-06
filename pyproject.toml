@@ -1,0 +1,22 @@
+[project]
+name = "ebl"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4>=4.13.3",
+    "camel-ai[all]<0.2.37",
+    "chunkr-ai>=0.0.41",
+    "docx2markdown>=0.1.1",
+    "geojson>=2.3.0",
+    "google-cloud-bigquery>=3.11.0",
+    "gradio>=3.50.2",
+    "matplotlib==3.8.2",
+    "pandas==2.1.4",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "seaborn>=0.13.2",
+    "selenium==4.16.0",
+    "webdriver-manager==4.0.1",
+]
