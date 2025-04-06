@@ -1,9 +1,0 @@
-requests
-geojson
-google-cloud-bigquery
-python-dotenv
-camel-ai[all]
-chunkr-ai
-docx2markdown
-gradio
-pandas
