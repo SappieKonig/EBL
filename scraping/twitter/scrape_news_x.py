@@ -364,6 +364,7 @@ def main():
         "https://x.com/i/trending/1908554482646233401",
         "https://x.com/i/trending/1908562448812294240",
         "https://x.com/i/trending/1908562447922798690",
+        "https://x.com/i/trending/1908590797307670873"
         "https://x.com/search?q=Cramer&src=trend_click&vertical=trends"
     ]
     
