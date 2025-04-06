@@ -136,7 +136,7 @@ def scrape_article_text(url):
                             return text
             
             # Fallback with minimal processing
-            paragraphs = soup.find_all('p')[:20]  # Limit to first 20 paragraphs for speed
+            paragraphs = soup.find_all('p')  # Limit to first 20 paragraphs for speed
             if paragraphs:
                 text = ' '.join([p.get_text().strip() for p in paragraphs])
                 text = ' '.join(text.split())
@@ -154,7 +154,7 @@ def scrape_article_text(url):
             if body:
                 text = ' '.join(body.get_text().strip().split())
                 if len(text) > 100:
-                    return text[:5000]  # Limit text length
+                    return text  # Limit text length
             
             return ""
             
