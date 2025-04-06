@@ -50,7 +50,7 @@ class SimpleTwitterScraper:
         self.chrome_options.add_argument("--disable-popup-blocking")
         
         # Add user agent to avoid detection
-        self.chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+        self.chrome_options.add_argument("--user-agent= AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
         
         if headless:
             self.chrome_options.add_argument("--headless=new")
@@ -72,8 +72,23 @@ class SimpleTwitterScraper:
     
     def setup_browser(self):
         """Set up the browser for scraping"""
-        service = Service(ChromeDriverManager().install())
+
+        driver_path = ChromeDriverManager().install()
+        driver_dir = os.path.dirname(driver_path)
+
+        # If the returned file isn't the executable, adjust the path
+        if not driver_path.lower().endswith("chromedriver.exe"):
+            potential_path = os.path.join(driver_dir, "chromedriver.exe")
+            if os.path.exists(potential_path):
+                driver_path = potential_path
+            else:
+                raise FileNotFoundError("Could not locate chromedriver.exe in the expected directory.")
+
+        print("Using ChromeDriver from:", driver_path)
+        service = Service(driver_path)
         self.driver = webdriver.Chrome(service=service, options=self.chrome_options)
+
+      
     
     def login_to_twitter(self):
         """Navigate to Twitter/X and wait for login"""
@@ -364,9 +379,58 @@ def main():
         "https://x.com/i/trending/1908554482646233401",
         "https://x.com/i/trending/1908562448812294240",
         "https://x.com/i/trending/1908562447922798690",
-        "https://x.com/i/trending/1908590797307670873"
-        "https://x.com/search?q=Cramer&src=trend_click&vertical=trends"
+        "https://x.com/i/trending/1908590797307670873",
+        "https://x.com/search?q=Cramer&src=trend_click&vertical=trends",
+        "https://x.com/search?q=trump&src=typed_query"
     ]
+
+    keywords = [
+        "trump",
+        "Elon Musk",
+        "AGI",
+        "European Builders League",
+        "EBL",
+        "AI",
+        "tariffs",
+        "reciprocal tariffs",
+        "trade war",
+        "tariffs are bad",
+        "tariffs are good",
+        "economy",
+        "FED",
+        "inflation",
+        "interest rates",
+        "stock market",
+        "stock market crash",
+        "Israel",
+        "Palestine",
+        "Gaza",
+        "Hamas",
+        "Israeli-Palestinian conflict",
+        "Israeli-Palestinian peace process",
+        "Israeli-Palestinian peace treaty",
+        "Israeli-Palestinian peace agreement",
+        "Russia",
+        "Ukraine",
+        "Russia-Ukraine conflict",
+        "Russia-Ukraine war",
+        "Russia-Ukraine peace process",
+        "Russia-Ukraine peace treaty",
+        "Russia-Ukraine peace agreement",
+        "China",
+        "Taiwan",
+        "Taiwan Strait",
+        "Taiwan Strait conflict",
+        "Taiwan Strait war",
+        "Taiwan Strait peace process",
+        "Taiwan Strait peace treaty",
+        "Taiwan Strait peace agreement",
+
+        
+
+    ]
+    for keyword in keywords:
+        predefined_links.append(f"https://x.com/search?q={keyword}&src=typed_query")
     
     # Get URL if not provided from arguments and not using predefined links
     url = args.url
